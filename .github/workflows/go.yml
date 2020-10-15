@@ -18,3 +18,4 @@ jobs:
           targets: windows/amd64,linux/amd64,darwin/amd64,*/arm
           v: true
           ldflags: -s -w
+      - run: ls ./build
