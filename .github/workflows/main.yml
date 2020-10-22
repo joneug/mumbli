@@ -15,7 +15,7 @@ jobs:
         with:
           xgo_version: latest
           go_version: 1.15.x
-          targets: windows/amd64,linux/amd64,darwin/amd64,*/arm
+          targets: "*/arm"
           v: true
           ldflags: -s -w
       - run: ls -R ./build
