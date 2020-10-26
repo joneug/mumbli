@@ -3,19 +3,15 @@ name: build
 on: [pull_request, push]
 
 jobs:
-  xgo:
+  go:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: '1.15'
       - name: Set up APT packages
         run: sudo apt-get install -y libopenal-dev libopus-dev libasound2-dev ffmpeg
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Build with xgo
-        uses: crazy-max/ghaction-xgo@v1
-        with:
-          xgo_version: latest
-          go_version: 1.15.x
-          targets: "*/arm"
-          v: true
-          ldflags: -s -w
-      - run: ls -R ./build
+      - name: Build
+        run: env GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=1 go build
