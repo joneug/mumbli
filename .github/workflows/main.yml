@@ -14,4 +14,4 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Build
-        run: env GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=1 go build
+        run: env GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=1 CC=arm-linux-gnueabi-gcc go build
