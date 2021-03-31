@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"layeh.com/gumble/gumble"
 	_ "layeh.com/gumble/opus"
@@ -12,7 +14,7 @@ import (
 
 func main() {
 	// Command line flags
-	server := flag.String("server", "localhost:64738", "the server to connect to")
+	server := flag.String("server", "", "the server to connect to")
 	username := flag.String("username", "", "the username of the client")
 	password := flag.String("password", "", "the password of the server")
 	insecure := flag.Bool("insecure", false, "skip server certificate verification")
@@ -20,16 +22,16 @@ func main() {
 
 	flag.Parse()
 
-	r := Mumbli{
+	m := Mumbli{
 		Config:  gumble.NewConfig(),
 		Address: *server,
 	}
 
-	r.Config.Username = *username
-	r.Config.Password = *password
+	m.Config.Username = *username
+	m.Config.Password = *password
 
 	if *insecure {
-		r.TLSConfig.InsecureSkipVerify = true
+		m.TLSConfig.InsecureSkipVerify = true
 	}
 
 	if *certificate != "" {
@@ -38,12 +40,16 @@ func main() {
 			_, _ = fmt.Fprintf(os.Stderr, "%s\n", err)
 			os.Exit(1)
 		}
-		r.TLSConfig.Certificates = append(r.TLSConfig.Certificates, cert)
+		m.TLSConfig.Certificates = append(m.TLSConfig.Certificates, cert)
 	}
 
-	r.start()
+	m.start()
 
-	for {
-		// If ctrl-c is pressed: r.Client.Disconnect()
-	}
+	// Disconnect when ctrl-c is pressed
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
+	fmt.Printf("\nDisconnecting from server...\n")
+	m.Client.Disconnect()
+	os.Exit(0)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/kennygrant/sanitize"
 	"layeh.com/gumble/gumble"
@@ -19,34 +20,44 @@ func (m *Mumbli) start() {
 	m.Config.Attach(gumbleutil.AutoBitrate)
 	m.Config.Attach(m)
 
-	var err error
-	_, err = gumble.DialWithDialer(new(net.Dialer), m.Address, m.Config, &m.TLSConfig)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+	// Retry until connecting to mumble server was successful
+	for {
+		var err error
+		_, err = gumble.DialWithDialer(new(net.Dialer), m.Address, m.Config, &m.TLSConfig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error while connecting to mumble server: %s\n", err)
+			fmt.Printf("Retrying in 10 seconds...\n")
+			time.Sleep(10 * time.Second)
+		} else {
+			break
+		}
 	}
 
 	// Audio
 	if os.Getenv("ALSOFT_LOGLEVEL") == "" {
 		os.Setenv("ALSOFT_LOGLEVEL", "0")
 	}
+
+	// Create new client
 	if stream, err := gumbleopenal.New(m.Client); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	} else {
 		m.Stream = stream
 	}
+
+	// Start audio stream
 	m.Stream.StartSource()
-	// To toogle voice: m.Stream.StopSource()
+	// To toggle voice: m.Stream.StopSource()
 }
 
 func (m *Mumbli) OnConnect(e *gumble.ConnectEvent) {
 	m.Client = e.Client
 
-	fmt.Println(fmt.Sprintf("To: %s", e.Client.Self.Channel.Name))
-	fmt.Println(fmt.Sprintf("Connected to %s", m.Client.Conn.RemoteAddr()))
+	fmt.Printf("To: %s\n", e.Client.Self.Channel.Name)
+	fmt.Printf("Connected to %s\n", m.Client.Conn.RemoteAddr())
 	if e.WelcomeMessage != nil {
-		fmt.Println(fmt.Sprintf("Welcome message: %s", esc(*e.WelcomeMessage)))
+		fmt.Printf("Welcome message: %s\n", esc(*e.WelcomeMessage))
 	}
 }
 
@@ -69,7 +80,7 @@ func (m *Mumbli) OnTextMessage(e *gumble.TextMessageEvent) {
 
 func (m *Mumbli) OnUserChange(e *gumble.UserChangeEvent) {
 	if e.Type.Has(gumble.UserChangeChannel) && e.User == m.Client.Self {
-		fmt.Println(fmt.Sprintf("To: %s", e.User.Channel.Name))
+		fmt.Printf("To: %s\n", e.User.Channel.Name)
 	}
 }
 
@@ -100,7 +111,7 @@ func (m *Mumbli) OnPermissionDenied(e *gumble.PermissionDeniedEvent) {
 	case gumble.PermissionDeniedNestingLimit:
 		info = "nesting limit"
 	}
-	fmt.Println(fmt.Sprintf("Permission denied: %s", info))
+	fmt.Printf("Permission denied: %s\n", info)
 }
 
 func (m *Mumbli) OnUserList(e *gumble.UserListEvent) {
