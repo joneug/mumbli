@@ -16,7 +16,7 @@ func esc(str string) string {
 	return sanitize.HTML(str)
 }
 
-func (m *Mumbli) start() {
+func (m *Mumbli) start(muted bool) {
 	m.Config.Attach(gumbleutil.AutoBitrate)
 	m.Config.Attach(m)
 
@@ -47,8 +47,9 @@ func (m *Mumbli) start() {
 	}
 
 	// Start audio stream
-	m.Stream.StartSource()
-	// To toggle voice: m.Stream.StopSource()
+	if !muted {
+		m.Stream.StartSource() // To toggle voice: m.Stream.StopSource()
+	}
 }
 
 func (m *Mumbli) OnConnect(e *gumble.ConnectEvent) {

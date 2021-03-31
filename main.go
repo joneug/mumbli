@@ -19,6 +19,7 @@ func main() {
 	password := flag.String("password", "", "the password of the server")
 	insecure := flag.Bool("insecure", false, "skip server certificate verification")
 	certificate := flag.String("certificate", "", "PEM encoded certificate and private key")
+	muted := flag.Bool("muted", false, "listen only")
 
 	flag.Parse()
 
@@ -43,7 +44,7 @@ func main() {
 		m.TLSConfig.Certificates = append(m.TLSConfig.Certificates, cert)
 	}
 
-	m.start()
+	m.start(*muted)
 
 	// Disconnect when ctrl-c is pressed
 	c := make(chan os.Signal, 1)
